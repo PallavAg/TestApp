@@ -1,5 +1,5 @@
 import {auth, googleAuthProvider} from "../lib/firebase";
-import {useContext} from "react";
+import {useContext, useEffect} from "react";
 import {UserContext} from "../lib/context";
 import {toast} from "react-hot-toast";
 
@@ -7,9 +7,7 @@ export default function EnterPage({}) {
     const {user, username} = useContext(UserContext)
 
     if (!user) {
-        processEmailLink() // If URL is a sign-in link, it verifies it
-    } else {
-        window.localStorage.removeItem('emailForSignIn')
+        useEffect(verifyEmailLink, [])
     }
 
     return (
@@ -18,6 +16,28 @@ export default function EnterPage({}) {
             {user ? <SignOutButton/> : <> <SignInButton/> <SignInEmailButton/> </>}
         </main>
     )
+}
+
+function verifyEmailLink() {
+    console.log("Not Signed In")
+    if (auth.isSignInWithEmailLink(window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (!email) {
+            email = window.prompt('Please provide your email for confirmation');
+        }
+
+        // The client SDK will parse the code from the link
+        auth.signInWithEmailLink(email, window.location.href)
+            .then((result) => {
+                toast.success("Logged in Successfully") // Todo: Occurs Multiple Times
+
+                // You can access the new user via result.user
+                // You can check if the user is new or existing: result.additionalUserInfo.isNewUser
+            })
+            .catch((error) => {
+                toast.error(`${error.message}`); // Action Code Malformed Error
+            });
+    }
 }
 
 // Sign in with Google
@@ -41,34 +61,10 @@ function SignInButton() {
 
 }
 
-function processEmailLink() {
-    if (typeof window !== "undefined") {
-        // Check Link
-        if (auth.isSignInWithEmailLink(window.location.href)) {
-            let email = window.localStorage.getItem('emailForSignIn');
-            if (!email) {
-                email = window.prompt('Please provide your email for confirmation');
-            }
-
-            // The client SDK will parse the code from the link
-            auth.signInWithEmailLink(email, window.location.href)
-                .then((result) => {
-                    toast.success("Logged in Successfully") // Todo: Occurs Multiple Times
-
-                    // You can access the new user via result.user
-                    // You can check if the user is new or existing: result.additionalUserInfo.isNewUser
-                })
-                .catch((error) => {
-                    toast.error(`${error.message}`); // Action Code Malformed Error
-                });
-        }
-    }
-}
-
 // Sign in with Google
 function SignInEmailButton() {
 
-    var actionCodeSettings = {
+    const actionCodeSettings = {
         // URL you want to redirect back to. The domain (www.example.com) for this
         url: 'http://localhost:3000/enter',
         // This must be true.
