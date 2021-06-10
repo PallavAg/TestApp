@@ -33,6 +33,11 @@ export default function Navbar() {
                             <button onClick={signOut}>Sign Out</button>
                         </li>
                         <li>
+                            <Link href="/profile">
+                                <button className="btn-blue">Profile</button>
+                            </Link>
+                        </li>
+                        <li>
                             <img src={'/hacker.png'} alt={"Profile Pic"}/>
                         </li>
                     </>

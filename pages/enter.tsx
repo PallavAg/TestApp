@@ -1,7 +1,8 @@
-import {auth, googleAuthProvider} from "../lib/firebase";
+import {auth, firestore, googleAuthProvider} from "../lib/firebase";
 import {useContext, useEffect} from "react";
 import {UserContext} from "../lib/context";
 import {toast} from "react-hot-toast";
+import firebase from "firebase";
 
 export default function EnterPage({}) {
     const {user, username} = useContext(UserContext)
@@ -19,7 +20,7 @@ export default function EnterPage({}) {
 }
 
 function verifyEmailLink() {
-    console.log("Not Signed In")
+
     if (auth.isSignInWithEmailLink(window.location.href)) {
         let email = window.localStorage.getItem('emailForSignIn');
         if (!email) {
@@ -30,7 +31,7 @@ function verifyEmailLink() {
         auth.signInWithEmailLink(email, window.location.href)
             .then((result) => {
                 toast.success("Logged in Successfully") // Todo: Occurs Multiple Times
-
+                createFirestoreEntry(result)
                 // You can access the new user via result.user
                 // You can check if the user is new or existing: result.additionalUserInfo.isNewUser
             })
@@ -40,12 +41,30 @@ function verifyEmailLink() {
     }
 }
 
+function createFirestoreEntry(result: firebase.auth.UserCredential) {
+    // Create user in firestore
+    if (result.additionalUserInfo.isNewUser) {
+        firestore.collection("users").doc(result.user.uid).set({
+            Birthday: "",
+            Name: ""
+        })
+            .then(() => {
+                toast.success("User created on firestore")
+            })
+            .catch((error) => {
+                toast.error("Uh Oh: " + error.message)
+            });
+    }
+}
+
 // Sign in with Google
 function SignInButton() {
 
     const signInWithGoogle = async () => {
         await auth.signInWithPopup(googleAuthProvider)
-            .then(() => {
+            .then((result) => {
+                // Create firestore entry if new user
+                createFirestoreEntry(result);
                 toast.success('Signed in Successfully');
             })
             .catch((error) => {
@@ -61,7 +80,7 @@ function SignInButton() {
 
 }
 
-// Sign in with Google
+// Sign in with Email
 function SignInEmailButton() {
 
     const actionCodeSettings = {
@@ -99,6 +118,7 @@ function SignInEmailButton() {
 function SignOutButton() {
     return <button onClick={() => auth.signOut()}>Sign Out</button>
 }
+
 
 function UsernameForm() {
 
