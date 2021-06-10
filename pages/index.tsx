@@ -12,7 +12,7 @@ export default function Home() {
     return (
         <div>
             <main>
-                {user ? <h1>Welcome!</h1>: <h1>Hello. Please Log In.</h1>}
+                {user ? <h1>Welcome! You are logged in.</h1>: <h1>Hello. Please Log In.</h1>}
             </main>
         </div>
     );
